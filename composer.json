@@ -28,7 +28,10 @@
     "autoload": {
         "psr-4": {
             "Shopapps\\LaravelSettings\\": "src"
-        }
+        },
+        "files": [
+            "src/Helpers/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
