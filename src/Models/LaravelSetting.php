@@ -25,12 +25,12 @@ class LaravelSetting extends Model {
     public const TYPE_STRING = 'string';
 
     public const TYPES = [
-        static::TYPE_BOOLEAN,
-        static::TYPE_INTEGER,
-        static::TYPE_FLOAT,
-        static::TYPE_ARRAY,
-        static::TYPE_OBJECT,
-        static::TYPE_STRING,
+        self::TYPE_BOOLEAN,
+        self::TYPE_INTEGER,
+        self::TYPE_FLOAT,
+        self::TYPE_ARRAY,
+        self::TYPE_OBJECT,
+        self::TYPE_STRING,
     ];
 
 
@@ -47,17 +47,17 @@ class LaravelSetting extends Model {
     public function getValueAttribute($value)
     {
         switch ($this->type) {
-            case static::TYPE_BOOLEAN:
+            case self::TYPE_BOOLEAN:
                 return (bool) $value;
-            case static::TYPE_INTEGER:
+            case self::TYPE_INTEGER:
                 return (int) $value;
-            case static::TYPE_FLOAT:
+            case self::TYPE_FLOAT:
                 return (float) $value;
-            case static::TYPE_ARRAY:
+            case self::TYPE_ARRAY:
                 return (array) json_decode($value, true);
-            case static::TYPE_OBJECT:
+            case self::TYPE_OBJECT:
                 return (object) json_decode($value);
-            case static::TYPE_STRING:
+            case self::TYPE_STRING:
             default:
                 return (string) $value;
         }
