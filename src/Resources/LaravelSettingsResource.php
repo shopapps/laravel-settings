@@ -5,7 +5,7 @@ namespace Shopapps\LaravelSettings\Resources;
 use Filament\Forms\Components\Textarea;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\CreateLaravelSetting;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\EditLaravelSetting;
-use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\ListLaravelSetting;
+use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\ListLaravelSettings;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\ViewLaravelSetting;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\RelationManager\RoleRelationManager;
 use Filament\Facades\Filament;
