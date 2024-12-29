@@ -13,7 +13,7 @@ class EditLaravelSetting extends EditRecord
     {
         $resource = static::getResource();
 
-        return config('filament-spatie-roles-permissions.should_redirect_to_index.permissions.after_edit', false)
+        return config('filament-spatie-roles-permissions.should_redirect_to_index.settings.after_edit', false)
             ? $resource::getUrl('index')
             : parent::getRedirectUrl();
     }

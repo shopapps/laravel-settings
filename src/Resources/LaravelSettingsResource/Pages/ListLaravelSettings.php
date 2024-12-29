@@ -1,6 +1,6 @@
 <?php
 
-namespace Shopapps\LaravelSettings\Resources\PermissionResource\Pages;
+namespace Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages;
 
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource;
 use Filament\Actions\CreateAction;
@@ -34,7 +34,7 @@ class ListLaravelSettings extends ListRecords
                 })
                 ->form([
                     Select::make('role')
-                        ->label(__('filament-spatie-roles-permissions::filament-spatie.field.role'))
+                        ->label(__('filament-spatie-roles-permissions::laravel-settings.field.role'))
                         ->options($roleModel::query()->pluck('name', 'id'))
                         ->required(),
                 ])->deselectRecordsAfterCompletion(),

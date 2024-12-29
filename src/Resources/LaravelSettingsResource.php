@@ -5,9 +5,10 @@ namespace Shopapps\LaravelSettings\Resources;
 use Filament\Forms\Components\Textarea;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\CreateLaravelSetting;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\EditLaravelSetting;
-use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\ListLaravelSetting;
+use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\ListLaravelSettings;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\ViewLaravelSetting;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\RelationManager\RoleRelationManager;
+use Shopapps\LaravelSettings\Models\LaravelSetting;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
@@ -24,8 +25,6 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 class LaravelSettingsResource extends Resource
 {
@@ -47,32 +46,32 @@ class LaravelSettingsResource extends Resource
 
     public static function getModel(): string
     {
-        return config('laravel-settings.models.laravel-setting', LaravelSetting::class);
+        return config('settings::laravel-settings.models.laravel-setting', LaravelSetting::class);
     }
 
     public static function getLabel(): string
     {
-        return __('laravel-settings::filament-spatie.section.permission');
+        return __('settings::laravel-settings.section.settings');
     }
 
     public static function getNavigationGroup(): ?string
     {
-        return __(config('laravel-settings.navigation_section_group', 'laravel-settings::filament-spatie.section.roles_and_permissions'));
+        return __(config('settings::laravel-settings.navigation_section_group', 'settings::laravel-settings.section.settings'));
     }
 
     public static function getNavigationSort(): ?int
     {
-        return  config('laravel-settings.sort.permission_navigation');
+        return  config('settings::laravel-settings.sort.permission_navigation');
     }
 
     public static function getPluralLabel(): string
     {
-        return __('laravel-settings::filament-spatie.section.permissions');
+        return __('settings::laravel-settings.section.settings');
     }
 
     public static function getCluster(): ?string
     {
-        return config('laravel-settings.clusters.permissions', null);
+        return config('laravel-settings.clusters.settings', null);
     }
 
     public static function form(Form $form): Form
@@ -83,17 +82,17 @@ class LaravelSettingsResource extends Resource
                     ->schema([
                         Grid::make(2)->schema([
                             TextInput::make('key')
-                                ->label(__('laravel-settings::laravel-settings.field.key'))
+                                ->label(__('settings::laravel-settings.field.key'))
                                 ->required(),
                             Select::make('type')
-                                ->label(__('laravel-settings::laravel-settings.field.type'))
+                                ->label(__('settings::laravel-settings.field.type'))
                                 ->options(self::getModel()::TYPES)
                                 ->live()
 //                                ->afterStateUpdated(fn(Set $set) => $set('roles', null))
                                 ->required(),
                             Textarea::make('value')
                                 ->rows(4)
-                                ->label(__('laravel-settings::laravel-settings.field.value'))
+                                ->label(__('settings::laravel-settings.field.value'))
                                 ->required(),
                         ]),
                     ]),
@@ -108,12 +107,12 @@ class LaravelSettingsResource extends Resource
                     ->label('ID')
                     ->searchable(),
                 TextColumn::make('key')
-                    ->label(__('laravel-settings::laravel-settings.field.key'))
+                    ->label(__('settings::laravel-settings.field.key'))
                     ->searchable(),
                 TextColumn::make('type')
-                    ->label(__('laravel-settings::laravel-settings.field.type')),
+                    ->label(__('settings::laravel-settings.field.type')),
                 TextColumn::make('value')
-                    ->label(__('laravel-settings::laravel-settings.field.value')),
+                    ->label(__('settings::laravel-settings.field.value')),
             ])
             ->filters([
                 //
@@ -136,7 +135,7 @@ class LaravelSettingsResource extends Resource
 
     public static function getPages(): array
     {
-        if (config('laravel-settings.should_use_simple_modal_resource.permissions')) {
+        if (config('laravel-settings.should_use_simple_modal_resource.settings')) {
             return [
                 'index' => ListLaravelSettings::route('/'),
             ];

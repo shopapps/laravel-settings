@@ -16,7 +16,7 @@ return [
         ],
     ],
     'resources' => [
-        'LaravelSettingsResource' => \Shopapps\LaravelSettings\Resources\SettingsResource::class,
+        'LaravelSettingsResource' => \Shopapps\LaravelSettings\Resources\LaravelSettingsResource::class,
     ],
     'models' => [
         'laravel-setting' => \Shopapps\LaravelSettings\Models\LaravelSetting::class,

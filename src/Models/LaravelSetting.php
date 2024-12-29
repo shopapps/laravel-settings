@@ -19,18 +19,18 @@ class LaravelSetting extends Model {
 
     public const TYPE_BOOLEAN = 'boolean';
     public const TYPE_INTEGER = 'integer';
-    public const TYPE_FLOAT = 'float';
-    public const TYPE_ARRAY = 'array';
-    public const TYPE_OBJECT = 'object';
-    public const TYPE_STRING = 'string';
+    public const TYPE_FLOAT   = 'float';
+    public const TYPE_ARRAY   = 'array';
+    public const TYPE_OBJECT  = 'object';
+    public const TYPE_STRING  = 'string';
 
     public const TYPES = [
-        static::TYPE_BOOLEAN,
-        static::TYPE_INTEGER,
-        static::TYPE_FLOAT,
-        static::TYPE_ARRAY,
-        static::TYPE_OBJECT,
-        static::TYPE_STRING,
+        self::TYPE_BOOLEAN => self::TYPE_BOOLEAN,
+        self::TYPE_INTEGER => self::TYPE_INTEGER,
+        self::TYPE_FLOAT   => self::TYPE_FLOAT,
+        self::TYPE_ARRAY   => self::TYPE_ARRAY,
+        self::TYPE_OBJECT  => self::TYPE_OBJECT,
+        self::TYPE_STRING  => self::TYPE_STRING,
     ];
 
 
@@ -44,37 +44,40 @@ class LaravelSetting extends Model {
         return $this->belongsTo(User::class);
     }
 
-    public function getValueAttribute($value)
+    public function getValueAttribute($value) : mixed
     {
         switch ($this->type) {
-            case static::TYPE_BOOLEAN:
+            case self::TYPE_BOOLEAN:
                 return (bool) $value;
-            case static::TYPE_INTEGER:
+            case self::TYPE_INTEGER:
                 return (int) $value;
-            case static::TYPE_FLOAT:
+            case self::TYPE_FLOAT:
                 return (float) $value;
-            case static::TYPE_ARRAY:
+            case self::TYPE_ARRAY:
                 return (array) json_decode($value, true);
-            case static::TYPE_OBJECT:
+            case self::TYPE_OBJECT:
                 return (object) json_decode($value);
-            case static::TYPE_STRING:
+            case self::TYPE_STRING:
             default:
                 return (string) $value;
         }
+
+        return $value;
     }
     public function getRawAttribute($value, $default = null)
     {
         return data_get($this->attributes, $value, $default);
     }
 
-    public function getSetting($key, $default = null, $global = true)
+    public static function getSetting($key, $default = null, $global = true)
     {
-        $query = $this->where('key', $key);
+        $query = self::query()->where('key', $key);
         $user_id = auth()->user()?->id() ?? null;
         if(!$global && $user_id) {
             $query->where('user_id', $user_id);
         }
         $setting = $query->first();
+
         if ($setting) {
             return $setting->value;
         }

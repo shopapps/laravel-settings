@@ -9,14 +9,14 @@ composer require shopapps/laravel-settings
 You can publish and run the migrations with:
 
 ```bash
-php artisan vendor:publish --tag="laravel-settings-migrations"
+php artisan vendor:publish --tag="settings-migrations"
 php artisan migrate
 ```
 
 You can publish the config file with:
 
 ```bash
-php artisan vendor:publish --tag="laravel-settings-config"
+php artisan vendor:publish --tag="settings-config"
 ```
 
 This is the contents of the published config file:
@@ -26,18 +26,28 @@ return [
 ];
 ```
 
-Optionally, you can publish the views using
 
-```bash
-php artisan vendor:publish --tag="laravel-settings-views"
+## To install into filamentphp admin interface.
+Edit: App\Providers\Filament\AdminPanelProvider
+
+add:
+
+```php
+// add this near top of file...
+use use Shopapps\LaravelSettings\LaravelSettingsPlugin;
+
+ ->plugins([
+... existign plugins
+LaravelSettingsPlugin::make(),
+])
 ```
 
 ## Usage
 
 ```php
-$variable = settings(key:'test.setting, default:"Hello World");
+$variable = settings(key:'test.setting', default:'Hello World');
 or just simply
-$variable = settings('test.setting);
+$variable = setting('test.setting');
 ```
 
 add keys and values into the database direct or add the plugin to filammentphp PanelProvider
