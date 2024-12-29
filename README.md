@@ -42,6 +42,21 @@ LaravelSettingsPlugin::make(),
 ])
 ```
 
+## To install into filamentphp admin interface.
+Edit: App\Providers\Filament\AdminPanelProvider
+
+add:
+
+```php
+// add this near top of file...
+use use Shopapps\LaravelSettings\LaravelSettingsPlugin;
+
+ ->plugins([
+... existign plugins
+LaravelSettingsPlugin::make(),
+])
+```
+
 ## Usage
 
 ```php
