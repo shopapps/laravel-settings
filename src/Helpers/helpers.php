@@ -1,8 +1,8 @@
 <?php
+declare(strict_types=1);
 
 use Shopapps\LaravelSettings\Models\LaravelSetting as LaravelSettingModel;
 
-declare(strict_types=1);
 
 
 if (! function_exists('settings')) {
