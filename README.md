@@ -35,6 +35,9 @@ php artisan vendor:publish --tag="laravel-settings-views"
 ## Usage
 
 ```php
-$variable = new VendorName\Skeleton();
-echo $variable->echoPhrase('Hello, VendorName!');
+$variable = settings(key:'test.setting, default:"Hello World");
+or just simply
+$variable = settings('test.setting);
 ```
+
+add keys and values into the database direct or add the plugin to filammentphp PanelProvider
