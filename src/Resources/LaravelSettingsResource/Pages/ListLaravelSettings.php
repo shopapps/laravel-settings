@@ -1,6 +1,6 @@
 <?php
 
-namespace Shopapps\LaravelSettings\Resources\PermissionResource\Pages;
+namespace Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages;
 
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource;
 use Filament\Actions\CreateAction;
