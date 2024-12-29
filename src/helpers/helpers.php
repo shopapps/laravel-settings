@@ -1,6 +1,6 @@
 <?php
 
-use Shopapps\LaravelSettings\Models\LaravelSetting as LarevelSettingModel;
+use Shopapps\LaravelSettings\Models\LaravelSetting as LaravelSettingModel;
 
 declare(strict_types=1);
 
@@ -12,8 +12,8 @@ if (! function_exists('settings')) {
         if(!$global) {
             $key .= \Illuminate\Support\Facades\Auth::id();
         }
-        Cache::remember($key, function () use ($key, $default, $global) {
-            return LarevelSettingModel::getSetting($key, $default, $global);
+        \Illuminate\Support\Facades\Cache::remember($key, function () use ($key, $default, $global) {
+            return LaravelSettingModel::getSetting($key, $default, $global);
         }, config('laravel-settings.cache_ttl', 86400));
         
     }
