@@ -14,7 +14,7 @@ class LaravelSettingsServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('laravel-settings')
-            ->hasConfigFile()
+            ->hasConfigFile('laravel-settings')
             ->hasTranslations();
     }
 }
