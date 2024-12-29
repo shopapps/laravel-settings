@@ -1,0 +1,50 @@
+<?php
+
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+use Spatie\Permission\PermissionRegistrar;
+
+class CreateLaravelSettingsTables extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        $table = config('laravel-settings.table.name');
+
+        if (empty($table)) {
+            throw new \Exception('Error: config/laravel-settings.php not loaded. Run [php artisan config:clear] and try again.');
+        }
+
+
+        Schema::create($table, function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('key')->index()->unique();
+            $table->string('type');
+            $table->string('value');
+            $table->string('user_id');
+            $table->timestamps();
+            $table->softDeletes();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        $table = config('laravel-settings.table.name');
+
+        if (empty($table)) {
+            throw new \Exception('Error: config/laravel-settings.php not found and defaults could not be merged. Please publish the package configuration before proceeding, or drop the tables manually.');
+        }
+
+        Schema::drop($table);
+    }
+}
