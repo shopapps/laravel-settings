@@ -21,9 +21,11 @@ class SettingService {
 
         $user_id = $this->handleUserId($user_id);
 
-        return Cache::remember($this->getKey($key, $user_id), function () use ($key, $default, $user_id) {
-            return self::getModel()::getSetting($key, $default, $user_id);
-        }, config('laravel-settings.cache_ttl', 86400));
+        return Cache::remember(
+            $this->getKey($key, $user_id),
+            config('laravel-settings.cache_ttl', 86400),
+            fn () => self::getModel()::getSetting($key, $default, $user_id)
+        );
     }
 
     public function getKey($key, $user_id = false) {
