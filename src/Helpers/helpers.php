@@ -3,24 +3,74 @@ declare(strict_types=1);
 
 use Shopapps\LaravelSettings\Models\LaravelSetting as LaravelSettingModel;
 use \Illuminate\Support\Facades\Cache;
+use \Illuminate\Support\Facades\Auth;
 
 
 if (! function_exists('setting')) {
-    function setting(string $key, $default=null, $global = true)
+    /**
+     * Retrieves a setting value from the cache or fetches it from the database if not cached.
+     * Allows options for local/global scope and saving the value directly.
+     *
+     * @param string     $key     The key of the setting.
+     * @param mixed|null $default The default value to return if the setting is not found.
+     * @param bool       $global  Whether the setting applies globally or locally to the authenticated user. Defaults to true for global.
+     * @param bool       $save    Whether to save the retrieved or updated setting value. Defaults to false.
+     *
+     * @return mixed The value of the setting.
+     */
+    function setting(string $key, $default=null, $global = true, $save = false) : mixed
     {
         $cache_key = 'settings_' . Str::slug($key);
         if(!$global) {
             $cache_key .= Auth()?->id();
         }
-        return Cache::remember(
+        $value =  Cache::remember(
             $cache_key,
             config('laravel-settings.cache_ttl', 86400),
             fn () => LaravelSettingModel::getSetting($key, $default, $global)
         );
+        
+        if($save) {
+            add_setting($key, $value, $global);
+        }
+
+        return $value;
+    }
+}
+
+if(!function_exists('add_setting')) {
+    /**
+     * Add or update a setting in the database.
+     *
+     * @param string $key    The unique key identifying the setting.
+     * @param mixed  $value  The value to associate with the key.
+     * @param bool   $global Determines whether the setting is global or user-specific. Defaults to true for global settings.
+     */
+    function add_setting($key, $value, $global = true) {
+        $data = [
+            'key' => $key,
+            'value' => $value,
+        ];
+        if(!$global) {
+            $data['user_id'] = Auth()->id;
+        }
+        LaravelSettingModel::updateOrCreate([
+            'key' => $key,
+            'user_id' => data_get($data, 'user_id'),
+        ], $data);
     }
 }
 
 if(! function_exists('clear_settings')) {
+    /**
+     * Clear all application settings from cache.
+     *
+     * This function removes all cached settings stored in Redis or the default cache store.
+     * If Redis is configured, it scans and deletes all keys matching the pattern `settings_*`.
+     * Otherwise, it loops through the settings in the database and clears them from the default cache.
+     *
+     * @return void
+     */
     function clear_settings() {
         // This uses Redis directly to scan and delete all keys matching settings_*
         if (config('cache.default') === 'redis') {
