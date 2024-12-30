@@ -90,7 +90,7 @@ class SettingService {
         }
     }
 
-    public function getModel() : Model {
+    public function getModel() : ?String {
         return config('laravel-settings.models.laravel-setting', LaravelSettingModel::class);
     }
 
