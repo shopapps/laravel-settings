@@ -90,8 +90,8 @@ class SettingService {
         }
     }
 
-    public function getModel() : ?String {
-        return config('laravel-settings.models.laravel-setting', LaravelSettingModel::class);
+    public function getModel() : ?Model {
+        return app(config('laravel-settings.models.laravel-setting', LaravelSettingModel::class));
     }
 
     // convert static calls to these methods to instance calls
