@@ -1,68 +1,113 @@
+# Laravel Settings
+
+**Laravel Settings** is a simple way to store and retrieve settings from the database, with built-in caching. It also ships with an optional FilamentPHP plugin for quick admin management.
+
 ## Installation
 
-You can install the package via composer:
+You can install the package via Composer:
 
 ```bash
 composer require shopapps/laravel-settings
 ```
 
-You can publish and run the migrations with:
+### Publish Migrations and Config
+
+Publish the migration and run it:
 
 ```bash
 php artisan vendor:publish --tag="settings-migrations"
 php artisan migrate
 ```
 
-You can publish the config file with:
+Then publish the config file:
 
 ```bash
 php artisan vendor:publish --tag="settings-config"
 ```
+A file named `laravel-settings.php` will appear in your `config` folder. Tweak it as needed.
 
-This is the contents of the published config file:
+## Filament Admin Integration
 
+If you're using Filament, you can optionally load the plugin:
 ```php
-return [
-];
+
+    // in App\Providers\Filament\AdminPanelProvider
+
+    use Shopapps\LaravelSettings\LaravelSettingsPlugin;
+
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->plugins([
+                // existing plugins...
+                LaravelSettingsPlugin::make(),
+            ]);
+    }
 ```
-
-
-## To install into filamentphp admin interface.
-Edit: App\Providers\Filament\AdminPanelProvider
-
-add:
-
-```php
-// add this near top of file...
-use use Shopapps\LaravelSettings\LaravelSettingsPlugin;
-
- ->plugins([
-... existign plugins
-LaravelSettingsPlugin::make(),
-])
-```
-
-## To install into filamentphp admin interface.
-Edit: App\Providers\Filament\AdminPanelProvider
-
-add:
-
-```php
-// add this near top of file...
-use use Shopapps\LaravelSettings\LaravelSettingsPlugin;
-
- ->plugins([
-... existign plugins
-LaravelSettingsPlugin::make(),
-])
-```
-
 ## Usage
 
+### Helper Functions
+
+#### Retrieve a setting:
 ```php
-$variable = settings(key:'test.setting', default:'Hello World');
-or just simply
-$variable = setting('test.setting');
+$value = setting('my.key', 'default_value');
+```
+##### For the currently authenticated user:
+```php
+$value = setting('my.key', null, true);
+```
+##### For a specific user ID:
+```php
+$value = setting('my.key', null, 123);
+```
+#### Add or update a setting:
+```php
+add_setting('my.key', 'some value');
+```
+##### User-specific:
+```php
+add_setting('my.key', 'some value', null, 123);
+```
+##### Or via `setting` helper (pass `true` to save):
+```php
+setting('my.key', 'some new value', true, true);
+```
+#### Delete a setting:
+
+```php
+delete_setting('my.key');
+delete_setting('my.key', 123);
+```
+#### Clear cached settings:
+```php
+clear_settings();
 ```
 
-add keys and values into the database direct or add the plugin to filammentphp PanelProvider
+This flushes all cached settings from Redis or your default cache store.
+
+### Service Class
+
+Under the hood, these helpers call methods on `Shopapps\LaravelSettings\Services\SettingService`. You can also use it directly:
+```php
+    use Shopapps\LaravelSettings\Services\SettingService;
+
+    // get
+    $value = SettingService::get('my.key');
+
+    // add/update
+    SettingService::add('my.key', 'some value');
+
+    // delete
+    SettingService::delete('my.key');
+
+    // clear all caches
+    SettingService::clearAll();
+```
+
+## Contributing
+
+Feel free to submit pull requests or create issues for bug fixes and new features.
+
+## License
+
+This package is open-sourced software licensed under the [MIT license](LICENSE.md).
