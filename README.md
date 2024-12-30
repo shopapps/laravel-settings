@@ -104,16 +104,16 @@ Under the hood, these helpers call methods on `Shopapps\LaravelSettings\Services
     use Shopapps\LaravelSettings\Services\SettingService;
 
     // get
-    $value = SettingService::get('my.key');
+    $value = SettingService::make()->get('my.key');
 
     // add/update
-    SettingService::add('my.key', 'some value');
+    SettingService::make()->add('my.key', 'some value');
 
     // delete
-    SettingService::delete('my.key');
+    SettingService::make()->delete('my.key');
 
     // clear all caches
-    SettingService::clearAll();
+    SettingService::make()->clearAll();
 ```
 
 ## Contributing

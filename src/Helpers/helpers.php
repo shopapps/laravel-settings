@@ -22,10 +22,10 @@ if (! function_exists('setting')) {
      */
     function setting(string $key, $default=null, $user_id = null, $save = false) : mixed
     {
-        $value = SettingService::get($key, $default, $user_id);
+        $value = SettingService::make()->get($key, $default, $user_id);
         if($save) {
             $type = gettype($value);
-            SettingService::add($key, $value, $type, $user_id);
+            SettingService::make()->add($key, $value, $type, $user_id);
         }
         return $value;
     }
@@ -40,7 +40,7 @@ if(!function_exists('add_setting')) {
      * @param bool   $global Determines whether the setting is global or user-specific. Defaults to true for global settings.
      */
     function add_setting($key, $value, $type = null, $user_id = true) {
-        return SettingService::add($key, $value, $type, $user_id);
+        return SettingService::make()->add($key, $value, $type, $user_id);
     }
 }
 
@@ -56,7 +56,7 @@ if(! function_exists('clear_settings')) {
      */
     function clear_settings() {
         // This uses Redis directly to scan and delete all keys matching settings_*
-        SettingService::clearAll();
+        SettingService::make()->clearAll();
     }
 }
 
@@ -70,7 +70,7 @@ if(! function_exists('delete_setting')) {
      * @return void
      */
     function delete_setting($key, $user_id = null) {
-        SettingService::delete($key, $user_id);
+        SettingService::make()->delete($key, $user_id);
     }
 }
 

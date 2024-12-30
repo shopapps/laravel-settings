@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Redis;
 
 class SettingService {
 
+    public static function make() {
+        return self::instance();
+    }
     public static function instance() {
         return new static();
     }
