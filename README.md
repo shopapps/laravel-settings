@@ -50,23 +50,35 @@ If you're using Filament, you can optionally load the plugin:
 
 #### Retrieve a setting:
 ```php
+$value = setting({key}, {value}, {user_id}, {save});
 $value = setting('my.key', 'default_value');
+# or...
+$value = setting('my.key');
+
 ```
 ##### For the currently authenticated user:
 ```php
 $value = setting('my.key', null, true);
+# or ...
+$value = setting('my.key', 'default_value', true);
 ```
+
 ##### For a specific user ID:
 ```php
-$value = setting('my.key', null, 123);
+$user_id = 1; // id of user you want the setting for
+
+$value = setting('my.key', 'default_value', $user_id);
 ```
+
 #### Add or update a setting:
 ```php
 add_setting('my.key', 'some value');
 ```
+
 ##### User-specific:
 ```php
-add_setting('my.key', 'some value', null, 123);
+add_setting({key}, {value}, {type}, {user_id});
+add_setting('my.key', 'some value', 'string', 123);
 ```
 ##### Or via `setting` helper (pass `true` to save):
 ```php
