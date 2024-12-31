@@ -16,7 +16,33 @@ class ListLaravelSettings extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->mutateFormDataUsing(function(array $data): array {
+                    // check the type of the data and convert it to the appropriate type
+                    switch(data_get($data, 'type')) {
+                        case LaravelSettingModel::TYPE_BOOLEAN:
+                            $data['value'] = (bool) $data['value'];
+                            break;
+                        case LaravelSettingModel::TYPE_INTEGER:
+                            $data['value'] = (int) $data['value'];
+                            break;
+                        case LaravelSettingModel::TYPE_FLOAT:
+                            $data['value'] = (float) $data['value'];
+                            break;
+                        case LaravelSetting::TYPE_OBJECT:
+                        case LaravelSetting::TYPE_ARRAY:
+                            if(!is_array($data['value'])) {
+                                // starts as a comma delimited list, explode and trim
+                                $data['value'] = array_map('trim', explode(',', $data['value']));
+                            }
+                            $data['value'] =  json_encode($data['value']);
+                            break;
+                        case LaravelSettingModel::TYPE_STRING:
+                        default:
+                            $data['value'] = (string) $data['value'];
+                            break;
+                    }
+                    return $data;
+            }),
         ];
     }
 

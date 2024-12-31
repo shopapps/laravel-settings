@@ -10,6 +10,7 @@ return [
     'field.key' => 'Key Name',
     'field.type' => 'Setting Type',
     'field.value' => 'Value',
+    'add_value' => 'Add Value',
 
     /*
     |--------------------------------------------------------------------------

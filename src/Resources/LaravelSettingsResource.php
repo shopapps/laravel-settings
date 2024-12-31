@@ -2,7 +2,9 @@
 
 namespace Shopapps\LaravelSettings\Resources;
 
+use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\CreateLaravelSetting;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\EditLaravelSetting;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\ListLaravelSettings;
@@ -25,6 +27,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 
 class LaravelSettingsResource extends Resource
 {
@@ -90,13 +93,27 @@ class LaravelSettingsResource extends Resource
                                 ->live()
 //                                ->afterStateUpdated(fn(Set $set) => $set('roles', null))
                                 ->required(),
-                            Textarea::make('value')
-                                ->rows(4)
-                                ->label(__('settings::laravel-settings.field.value'))
-                                ->required(),
+                            Grid::make(1)->columnSpan(2)->schema([
+                                TextInput::make('value')
+                                    ->label(__('settings::laravel-settings.field.value'))
+                                    ->required()
+                                    ->visible(fn(Get $get) => $get('type') !== LaravelSetting::TYPE_ARRAY && $get('type') !== LaravelSetting::TYPE_OBJECT && $get('type') !== LaravelSetting::TYPE_BOOLEAN),
+                                Toggle::make('value')
+                                    ->label(__('settings::laravel-settings.field.value'))
+                                    ->required()
+                                    ->visible(fn(Get $get) => $get('type') === LaravelSetting::TYPE_BOOLEAN),
+                                ]),
+                                KeyValue::make('value')
+                                    ->columnSpan(2)
+                                    ->label(__('settings::laravel-settings.field.value'))
+                                    ->addActionLabel(__('settings::laravel-settings.add_value'))
+                                    ->formatStateUsing(fn($state, Model $record) => $record->value)
+                                    ->required()
+                                    ->visible(fn(Get $get) => $get('type') === LaravelSetting::TYPE_ARRAY || $get('type') === LaravelSetting::TYPE_OBJECT),
                         ]),
                     ]),
-            ]);
+            ])
+            ;
     }
 
     public static function table(Table $table): Table
@@ -117,7 +134,33 @@ class LaravelSettingsResource extends Resource
             ->filters([
                 //
             ])->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->mutateFormDataUsing(function(array $data): array {
+                        switch(data_get($data, 'type')) {
+                            case LaravelSetting::TYPE_BOOLEAN:
+                                $data['value'] = (bool) $data['value'];
+                                break;
+                            case LaravelSetting::TYPE_INTEGER:
+                                $data['value'] = (int) $data['value'];
+                                break;
+                            case LaravelSetting::TYPE_FLOAT:
+                                $data['value'] = (float) $data['value'];
+                                break;
+                            case LaravelSetting::TYPE_OBJECT:
+                            case LaravelSetting::TYPE_ARRAY:
+                                if(!is_array($data['value'])) {
+                                    // legacy when usoing textarea and comma delimited list, explode and trim
+                                    $data['value'] = array_map('trim', explode(',', $data['value']));
+                                }
+                                $data['value'] =  json_encode($data['value']);
+                                break;
+                            case LaravelSetting::TYPE_STRING:
+                            default:
+                                $data['value'] = (string) $data['value'];
+                                break;
+                        }
+                        return $data;
+                    }),
                 Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
@@ -142,10 +185,12 @@ class LaravelSettingsResource extends Resource
         }
 
         return [
-            'index' => ListLaravelSettings::route('/'),
+            'index'  => ListLaravelSettings::route('/'),
             'create' => CreateLaravelSetting::route('/create'),
-            'edit' => EditLaravelSetting::route('/{record}/edit'),
-            'view' => ViewLaravelSetting::route('/{record}'),
+            'edit'   => EditLaravelSetting::route('/{record}/edit'),
+            'view'   => ViewLaravelSetting::route('/{record}'),
         ];
     }
+
+
 }

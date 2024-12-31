@@ -5,6 +5,7 @@ namespace Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource;
 use Filament\Resources\Pages\EditRecord;
 use App\Models\LaravelSetting as LaravelSettingModel;
+use Illuminate\Support\Facades\Log;
 
 class EditLaravelSetting extends EditRecord
 {

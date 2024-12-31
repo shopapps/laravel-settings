@@ -14,10 +14,7 @@ class LaravelSettingsPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        $panel
-            ->resources(
-                config('laravel-settings.resources')
-            );
+        $panel->resources(config('laravel-settings.resources'));
     }
 
     public static function make(): static
