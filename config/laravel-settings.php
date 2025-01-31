@@ -66,7 +66,7 @@ return [
      * Icons to use for navigation
      */
     'icons' => [
-        'settings_navigation' => 'heroicon-o-lock-closed',
+        'settings_navigation' => 'heroicon-o-queue-list',
     ],
 
     /*

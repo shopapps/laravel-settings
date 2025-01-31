@@ -107,7 +107,7 @@ class LaravelSettingsResource extends Resource
                                     ->columnSpan(2)
                                     ->label(__('settings::laravel-settings.field.value'))
                                     ->addActionLabel(__('settings::laravel-settings.add_value'))
-                                    ->formatStateUsing(fn($state, Model $record) => $record->value)
+                                    ->formatStateUsing(fn($state, ?Model $record) => $record?->value)
                                     ->required()
                                     ->visible(fn(Get $get) => $get('type') === LaravelSetting::TYPE_ARRAY || $get('type') === LaravelSetting::TYPE_OBJECT),
                         ]),
@@ -146,7 +146,6 @@ class LaravelSettingsResource extends Resource
                             case LaravelSetting::TYPE_FLOAT:
                                 $data['value'] = (float) $data['value'];
                                 break;
-                            case LaravelSetting::TYPE_OBJECT:
                             case LaravelSetting::TYPE_ARRAY:
                                 if(!is_array($data['value'])) {
                                     // legacy when usoing textarea and comma delimited list, explode and trim

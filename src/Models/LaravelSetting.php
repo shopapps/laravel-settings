@@ -3,6 +3,7 @@ namespace Shopapps\LaravelSettings\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Arr;
 
 class LaravelSetting extends Model {
 
@@ -29,7 +30,6 @@ class LaravelSetting extends Model {
         self::TYPE_INTEGER => self::TYPE_INTEGER,
         self::TYPE_FLOAT   => self::TYPE_FLOAT,
         self::TYPE_ARRAY   => self::TYPE_ARRAY,
-        self::TYPE_OBJECT  => self::TYPE_OBJECT,
         self::TYPE_STRING  => self::TYPE_STRING,
     ];
 
@@ -57,7 +57,13 @@ class LaravelSetting extends Model {
                 if(is_array($value)) {
                     return $value;
                 }
-                return (array) json_decode($value, true);
+
+                try {
+                    $value = Arr::undot(json_decode($value, true));
+                } catch (\Exception $e) {
+                    //
+                }
+                return $value;
             case self::TYPE_OBJECT:
                 if(is_array($value)) {
                     return (object) $value;
@@ -121,14 +127,28 @@ class LaravelSetting extends Model {
                 break;
             }
 
+            /** @var static $candidate */
             $candidate = $base_query->clone()->where('key', $partialKey)->first();
             if ($candidate) {
                 // Use data_get on the candidate's value, looking up whatever is in $tail
                 // e.g. first iteration, $tail = ['name'], second iteration $tail = ['key','name'] etc.
                 $tailString = implode('.', $tail);
 
-                // data_get returns null if the sub-key doesn't exist (unless you pass a default)
-                $subValue = data_get($candidate->value, $tailString, null);
+                $values = $candidate->getRawAttribute('value');
+
+                if($candidate->type == self::TYPE_ARRAY || $candidate->type == self::TYPE_OBJECT) {
+
+                    $value_array = json_decode($values, true);
+                    // dot flatten it and restructure
+                    try {
+                        $values = Arr::undot(json_decode($values, true));
+                    } catch (\Exception $e) {
+                        $values = $value_array;
+                    }
+
+                }
+
+                $subValue = data_get($values, $tailString, null);
 
                 if (! is_null($subValue)) {
                     return $subValue;

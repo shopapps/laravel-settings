@@ -8,6 +8,7 @@ use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Collection;
+use Shopapps\LaravelSettings\Models\LaravelSetting as LaravelSettingModel;
 
 class ListLaravelSettings extends ListRecords
 {
@@ -28,8 +29,7 @@ class ListLaravelSettings extends ListRecords
                         case LaravelSettingModel::TYPE_FLOAT:
                             $data['value'] = (float) $data['value'];
                             break;
-                        case LaravelSetting::TYPE_OBJECT:
-                        case LaravelSetting::TYPE_ARRAY:
+                        case LaravelSettingModel::TYPE_ARRAY:
                             if(!is_array($data['value'])) {
                                 // starts as a comma delimited list, explode and trim
                                 $data['value'] = array_map('trim', explode(',', $data['value']));
