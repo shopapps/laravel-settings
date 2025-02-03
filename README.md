@@ -16,10 +16,15 @@ Publish the migration and run it:
 
 ```bash
 php artisan vendor:publish --tag="settings-migrations"
+```
+
+run the migration:
+
+```bash 
 php artisan migrate
 ```
 
-Then publish the config file:
+Optionally publish the config file:
 
 ```bash
 php artisan vendor:publish --tag="settings-config"
@@ -31,16 +36,16 @@ A file named `laravel-settings.php` will appear in your `config` folder. Tweak i
 If you're using Filament, you can optionally load the plugin:
 ```php
 
-    // in App\Providers\Filament\AdminPanelProvider
+    // typically in App\Providers\Filament\AdminPanelProvider
 
-    use Shopapps\LaravelSettings\LaravelSettingsPlugin;
+    use Shopapps\LaravelSettings\LaravelSettingsPlugin; // put this near top of file
 
     public function panel(Panel $panel): Panel
     {
         return $panel
             ->plugins([
-                // existing plugins...
-                LaravelSettingsPlugin::make(),
+                // ... existing plugins ...
+                LaravelSettingsPlugin::make(), // <-- add this line
             ]);
     }
 ```
@@ -114,6 +119,21 @@ Under the hood, these helpers call methods on `Shopapps\LaravelSettings\Services
 
     // clear all caches
     SettingService::make()->clearAll();
+```
+
+
+# Access Control
+To restrict access to the Resource and Page publish the config and edit the config file or add the following to your .env file:
+```bash
+# enable access control
+LARAVEL_SETTINGS_ACCESS_CONTROL_ENABLED=true
+# using Spaties - Roles & Permissions - set the permission name default = 'laravel_settings.view'
+LARAVEL_SETTINGS_SPATIE_PERMISSIONS_ACTIVE=true
+LARAVEL_SETTINGS_SPATIE_PERMISSION="laravel_settings.view"
+# alternatively restrict access only to a list of specific emails
+LARAVEL_SETTINGS_ALLOWED_EMAILS="admin@test.com, admin2@test.com"
+# or optional user_ids...
+LARAVEL_SETTINGS_ALLOWED_USER_IDS="1,2,3,4"
 ```
 
 ## Contributing

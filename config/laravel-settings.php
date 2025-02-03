@@ -1,7 +1,29 @@
 <?php
-
+/*
+ * Config for shopapps/laravel-settings
+ */
 return [
 
+    /*
+     * Set edit mode to 'text' or 'simple'
+     * simple - uses Filament Key Values when editing arrays
+     * text - uses Textarea when editing complex arrays
+     *
+     */
+    'edit_mode' => env('LARAVEL_SETTINGS_EDIT_MODE', 'text'),
+
+    'access_control' => [
+        'enabled' => env('LARAVEL_SETTINGS_ACCESS_CONTROL_ENABLED', false), // set to true to restrict access to the Resource
+        'spatie' => [
+            'enabled' => env('LARAVEL_SETTINGS_SPATIE_PERMISSIONS_ACTIVE', false),
+            'permission' => env('LARAVEL_SETTINGS_SPATIE_PERMISSION', 'laravel_settings.view'),
+        ],
+        'allowed' => [
+            'emails' => array_map('trim', explode(',', env('LARAVEL_SETTINGS_ALLOWED_EMAILS', '')) ?? []), // string of comma-delimited emails e.g. 'user1@test.com,user2@test.com'
+            'user_ids' => array_map('trim', explode(',', env('LARAVEL_SETTINGS_ALLOWED_USER_IDS', '')) ?? []), // string of comma delimited user ids e.g. '1,2,3'
+        ],
+    ],
+    
     'table_name' => 'settings',
     'table' => [
         'name' => 'settings',

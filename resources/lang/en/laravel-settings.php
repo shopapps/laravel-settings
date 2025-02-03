@@ -7,9 +7,17 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'field.key' => 'Key Name',
-    'field.type' => 'Setting Type',
-    'field.value' => 'Value',
+    'field' => [
+        'value' => [
+            'key' => 'Key Name',
+            'type' => 'Setting Type',
+            'value' => 'Value',
+            'hint' => [
+                'json' => 'must be in JSON format'
+            ],
+            'json' => 'JSON',
+        ],
+    ],
     'add_value' => 'Add Value',
 
     /*

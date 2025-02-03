@@ -57,12 +57,20 @@ class LaravelSetting extends Model {
                 if(is_array($value)) {
                     return $value;
                 }
-
                 try {
+                    if(config('laravel-settings.edit_mode') == 'text') {
+                        // need to clean up the json string to remove \n and other unwanted characters first
+                        // but do not remove from within the values or keys
+                        $value = str_replace(["\n", "\t"], '', $value);
+                        //dd(__METHOD__, __LINE__, $value);
+
+                    }
                     $value = Arr::undot(json_decode($value, true));
                 } catch (\Exception $e) {
                     //
                 }
+
+
                 return $value;
             case self::TYPE_OBJECT:
                 if(is_array($value)) {
@@ -141,13 +149,13 @@ class LaravelSetting extends Model {
                     $value_array = json_decode($values, true);
                     // dot flatten it and restructure
                     try {
-                        $values = Arr::undot(json_decode($values, true));
+                        $values = Arr::undot($value_array);
                     } catch (\Exception $e) {
                         $values = $value_array;
                     }
 
                 }
-
+dd($values);
                 $subValue = data_get($values, $tailString, null);
 
                 if (! is_null($subValue)) {
