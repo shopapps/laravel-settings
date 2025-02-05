@@ -44,9 +44,9 @@ return [
         'laravel-setting' => \Shopapps\LaravelSettings\Models\LaravelSetting::class,
     ],
 
-    'cache_settings' => true,
+    'cache_settings' => env('LARAVEL_SETTINGS_CACHE', true),
 
-    'cache_ttl' => 86400,
+    'cache_ttl' => env('LARAVEL_SETTINGS_CACHE_TTL', 86400),
 
     'navigation_section_group' => 'Settings', // Default uses language constant
 

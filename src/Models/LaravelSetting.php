@@ -59,13 +59,25 @@ class LaravelSetting extends Model {
                 }
                 try {
                     if(config('laravel-settings.edit_mode') == 'text') {
+                        /*
+                         * take example string and tidy up to convert to array:
+                         * {
+                                "tenant_id": 1021,
+                                "recipients": ["test 1","test 2", "test 3 "]
+                                }
+                         */
                         // need to clean up the json string to remove \n and other unwanted characters first
                         // but do not remove from within the values or keys
-                        $value = str_replace(["\n", "\t"], '', $value);
-                        //dd(__METHOD__, __LINE__, $value);
-
+                        //$value = str_replace(["\n", "\t"], '', $value);
+                        $value = trim($value);
+                        $value = json_decode($value, true);
+                        if (json_last_error() !== JSON_ERROR_NONE) {
+                            dd("JSON Error: " . json_last_error_msg());
+                        }
+                        $value = Arr::undot($value);
+                    } else {
+                        $value = Arr::undot(json_decode($value, true));
                     }
-                    $value = Arr::undot(json_decode($value, true));
                 } catch (\Exception $e) {
                     //
                 }
@@ -147,6 +159,7 @@ class LaravelSetting extends Model {
                 if($candidate->type == self::TYPE_ARRAY || $candidate->type == self::TYPE_OBJECT) {
 
                     $value_array = json_decode($values, true);
+
                     // dot flatten it and restructure
                     try {
                         $values = Arr::undot($value_array);
@@ -155,7 +168,6 @@ class LaravelSetting extends Model {
                     }
 
                 }
-
                 $subValue = data_get($values, $tailString, null);
 
                 if (! is_null($subValue)) {
@@ -166,5 +178,14 @@ class LaravelSetting extends Model {
 
         // If we exhaust all segments and never find anything, return the default
         return $default;
+    }
+
+    public function getPrettyValueAttribute()
+    {
+        $value = $this->value;
+        if($this->type == self::TYPE_ARRAY || $this->type == self::TYPE_OBJECT) {
+            $value = json_encode($value, JSON_PRETTY_PRINT);
+        }
+        return $value;
     }
 }

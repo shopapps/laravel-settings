@@ -142,9 +142,10 @@ class LaravelSettingsResource extends Resource
                                 ->rows(10)
                                 ->label(__('settings::laravel-settings.field.value.json'))
                                 ->hint(__('settings::laravel-settings.field.value.hint.json'))
+                                ->rules(['json'])
 
                                 ->formatStateUsing(function($state, ?Model $record) {
-                                    return $record?->getRawAttribute('value', '');
+                                    return $record?->pretty_value;
                                 })
                                 ->required()
                                 ->visible(fn(Get $get) => ($get('type') === LaravelSetting::TYPE_ARRAY || $get('type') === LaravelSetting::TYPE_OBJECT) && config('laravel-settings.edit_mode') == 'text'),
