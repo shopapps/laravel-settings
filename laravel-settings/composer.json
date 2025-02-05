@@ -1,0 +1,60 @@
+{
+    "name": "shopapps/laravel-settings",
+    "description": "config style settings but stored in a DB",
+    "keywords": [
+        "shopapps",
+        "laravel-settings"
+    ],
+    "homepage": "https://github.com/shopapps/laravel-settings",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Paul Robbins",
+            "email": "shopappsuk@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.1|^8.2",
+        "filament/filament": "^3.0",
+        "illuminate/support": "^9|^10|^11"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.10",
+        "orchestra/testbench": "^7.0|^9.0",
+        "phpunit/phpunit": "^9.0|^10.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Shopapps\\LaravelSettings\\": "src"
+        },
+        "files": [
+            "src/Helpers/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Shopapps\\LaravelSettings\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Shopapps\\LaravelSettings\\LaravelSettingsServiceProvider"
+            ],
+            "aliases": {
+                "LaravelSettings": "Shopapps\\LaravelSettings\\LaravelSettingsFacade"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

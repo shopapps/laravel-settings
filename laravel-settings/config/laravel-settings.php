@@ -38,7 +38,7 @@ return [
         ],
     ],
     'resources' => [
-        'LaravelSettingsResource' => \Shopapps\LaravelSettings\Filament\Resources\LaravelSettingsResource::class,
+        'LaravelSettingsResource' => \Shopapps\LaravelSettings\Resources\LaravelSettingsResource::class,
     ],
     'models' => [
         'laravel-setting' => \Shopapps\LaravelSettings\Models\LaravelSetting::class,
