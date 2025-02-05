@@ -6,8 +6,6 @@ use App\Models\LaravelSetting as LaravelSettingModel;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Log;
 use Shopapps\LaravelSettings\Filament\Resources\LaravelSettingsResource;
-use function Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\config;
-use function Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\data_get;
 
 class EditLaravelSetting extends EditRecord
 {

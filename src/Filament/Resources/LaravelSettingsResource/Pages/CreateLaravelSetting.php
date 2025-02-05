@@ -6,8 +6,6 @@ use App\Models\LaravelSetting as LaravelSettingModel;
 use Filament\Resources\Pages\CreateRecord;
 use Shopapps\LaravelSettings\Filament\Resources\LaravelSettingsResource;
 use Shopapps\LaravelSettings\Resources\RoleResource;
-use function Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\config;
-use function Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\data_get;
 
 class CreateLaravelSetting extends CreateRecord
 {

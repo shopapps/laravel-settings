@@ -13,7 +13,7 @@ return [
             'type' => 'Setting Type',
             'value' => 'Value',
             'hint' => [
-                'json' => 'must be in JSON format. i.e. use double quotes around keys and values and no excess commas at end of data.',
+                'json' => 'must be in JSON format. i.e. use double quotes around keys and values and no excess comma at the end.',
             ],
             'json' => 'JSON',
         ],

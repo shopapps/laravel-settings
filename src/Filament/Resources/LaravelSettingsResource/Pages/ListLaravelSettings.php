@@ -9,9 +9,6 @@ use Filament\Tables\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Collection;
 use Shopapps\LaravelSettings\Filament\Resources\LaravelSettingsResource;
 use Shopapps\LaravelSettings\Models\LaravelSetting as LaravelSettingModel;
-use function Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\__;
-use function Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\config;
-use function Shopapps\LaravelSettings\Resources\LaravelSettingsResource\Pages\data_get;
 
 class ListLaravelSettings extends ListRecords
 {
