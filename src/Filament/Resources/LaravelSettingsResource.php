@@ -18,6 +18,8 @@ use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
+
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -171,7 +173,7 @@ class LaravelSettingsResource extends Resource
                     ->label(__('settings::laravel-settings.field.value.value')),
             ])
             ->filters([
-                //
+                TrashedFilter::make(),
             ])->actions([
                 Tables\Actions\EditAction::make()
                     ->mutateFormDataUsing(function(array $data, Model $record): array {
@@ -208,6 +210,7 @@ class LaravelSettingsResource extends Resource
                         return $data;
                     }),
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
