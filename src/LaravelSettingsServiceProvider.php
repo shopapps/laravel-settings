@@ -1,6 +1,6 @@
 <?php
 
-namespace shopapps\LaravelSettings;
+namespace Shopapps\LaravelSettings;
 
 use shopapps\LaravelSettings\Commands\Permission;
 use Spatie\LaravelPackageTools\Package;

@@ -1,6 +1,6 @@
 <?php
 
-namespace shopapps\LaravelSettings;
+namespace Shopapps\LaravelSettings;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
