@@ -10,6 +10,7 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 class LaravelSettingsServiceProvider extends PackageServiceProvider
 {
     public static string $name = 'laravel-settings';
+
     public ?string $publishableProviderName = 'laravel-settings';
 
     public function configurePackage(Package $package): void
@@ -18,6 +19,7 @@ class LaravelSettingsServiceProvider extends PackageServiceProvider
             ->name('laravel-settings')
             ->hasConfigFile('laravel-settings')
             ->hasMigration('create_laravel_settings_table')
+            ->hasMigration('update_laravel_settings_value_to_longtext')
             ->hasTranslations()
             ->hasCommands([
                 SettingsCache::class,

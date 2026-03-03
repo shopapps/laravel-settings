@@ -2,7 +2,6 @@
 
 namespace Shopapps\LaravelSettings\Filament\Resources;
 
-use Filament\Facades\Filament;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Section;
@@ -16,29 +15,22 @@ use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\Action as TableAction;
-use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
-
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 use Shopapps\LaravelSettings\Filament\Resources\LaravelSettingsResource\Pages\CreateLaravelSetting;
 use Shopapps\LaravelSettings\Filament\Resources\LaravelSettingsResource\Pages\EditLaravelSetting;
 use Shopapps\LaravelSettings\Filament\Resources\LaravelSettingsResource\Pages\ListLaravelSettings;
 use Shopapps\LaravelSettings\Filament\Resources\LaravelSettingsResource\Pages\ViewLaravelSetting;
 use Shopapps\LaravelSettings\Models\LaravelSetting;
-use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\RelationManager\RoleRelationManager;
 use Shopapps\LaravelSettings\Services\SettingService;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\HtmlString;
-
 
 class LaravelSettingsResource extends Resource
 {
-
     public static function isScopedToTenant(): bool
     {
         return config('laravel-settings.scope_to_tenant', true);
@@ -46,7 +38,7 @@ class LaravelSettingsResource extends Resource
 
     public static function getNavigationIcon(): ?string
     {
-        return  config('laravel-settings.icons.settings_navigation');
+        return config('laravel-settings.icons.settings_navigation');
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -71,7 +63,7 @@ class LaravelSettingsResource extends Resource
 
     public static function getNavigationSort(): ?int
     {
-        return  config('settings::laravel-settings.sort.settings_navigation');
+        return config('settings::laravel-settings.sort.settings_navigation');
     }
 
     public static function getPluralLabel(): string
@@ -79,30 +71,27 @@ class LaravelSettingsResource extends Resource
         return __('settings::laravel-settings.section.settings');
     }
 
-
-
     public static function canAccess(): bool
     {
         // default mode is to allow access unless some level of security is applied
-        if(!config('laravel-settings.access_control.enabled')) {
+        if (! config('laravel-settings.access_control.enabled')) {
             return true;
         }
 
         /*
          * Access Control is enabled so now return false unless the user is allowed
          */
-        if(config('laravel-settings.access_control.spatie.enabled')) {
-            if(auth()->user()?->hasPermissionTo(config('laravel-settings.access_control.spatie.permission'))) {
+        if (config('laravel-settings.access_control.spatie.enabled')) {
+            if (auth()->user()?->hasPermissionTo(config('laravel-settings.access_control.spatie.permission'))) {
                 return true;
             }
         }
 
-
-        if(in_array(auth()->user()?->email, config('laravel-settings.access_control.allowed.emails'))) {
+        if (in_array(auth()->user()?->email, config('laravel-settings.access_control.allowed.emails'))) {
             return true;
         }
 
-        if(in_array(auth()->user()?->id, config('laravel-settings.access_control.allowed.user_ids'))) {
+        if (in_array(auth()->user()?->id, config('laravel-settings.access_control.allowed.user_ids'))) {
             return true;
         }
 
@@ -129,36 +118,41 @@ class LaravelSettingsResource extends Resource
                                 TextInput::make('value')
                                     ->label(__('settings::laravel-settings.field.value.value'))
                                     ->required()
-                                    ->visible(fn(Get $get) => $get('type') !== LaravelSetting::TYPE_ARRAY && $get('type') !== LaravelSetting::TYPE_OBJECT && $get('type') !== LaravelSetting::TYPE_BOOLEAN),
+                                    ->visible(fn (Get $get) => $get('type') !== LaravelSetting::TYPE_ARRAY && $get('type') !== LaravelSetting::TYPE_OBJECT && $get('type') !== LaravelSetting::TYPE_BOOLEAN),
                                 Toggle::make('value')
                                     ->label(__('settings::laravel-settings.field.value.value'))
                                     ->required()
-                                    ->visible(fn(Get $get) => $get('type') === LaravelSetting::TYPE_BOOLEAN),
+                                    ->visible(fn (Get $get) => $get('type') === LaravelSetting::TYPE_BOOLEAN),
                             ]),
                             KeyValue::make('value')
                                 ->columnSpan(2)
                                 ->label(__('settings::laravel-settings.field.value.value'))
                                 ->addActionLabel(__('settings::laravel-settings.add_value'))
-                                ->formatStateUsing(fn($state, ?Model $record) => $record?->value)
+                                ->formatStateUsing(fn ($state, ?Model $record) => $record?->value)
                                 ->required()
-                                ->visible(fn(Get $get) => ($get('type') === LaravelSetting::TYPE_ARRAY || $get('type') === LaravelSetting::TYPE_OBJECT) && config('laravel-settings.edit_mode') == 'simple'),
+                                ->visible(fn (Get $get) => ($get('type') === LaravelSetting::TYPE_ARRAY || $get('type') === LaravelSetting::TYPE_OBJECT) && config('laravel-settings.edit_mode') == 'simple'),
 
                             Textarea::make('value')
                                 ->columnSpan(2)
-                                ->rows(10)
+                                ->rows(15)
                                 ->label(__('settings::laravel-settings.field.value.json'))
                                 ->hint(__('settings::laravel-settings.field.value.hint.json'))
-                                ->rules(['json'])
-
-                                ->formatStateUsing(function($state, ?Model $record) {
+                                ->extraAttributes([
+                                    'class' => 'font-mono text-sm',
+                                    'style' => 'font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; line-height: 1.5; tab-size: 2;',
+                                ])
+                                ->formatStateUsing(function ($state, ?Model $record) {
                                     return $record?->pretty_value;
                                 })
+                                ->rules(['json'])
+                                ->validationMessages([
+                                    'json' => 'The value must be valid JSON. Use double quotes for keys and values.',
+                                ])
                                 ->required()
-                                ->visible(fn(Get $get) => ($get('type') === LaravelSetting::TYPE_ARRAY || $get('type') === LaravelSetting::TYPE_OBJECT) && config('laravel-settings.edit_mode') == 'text'),
+                                ->visible(fn (Get $get) => ($get('type') === LaravelSetting::TYPE_ARRAY || $get('type') === LaravelSetting::TYPE_OBJECT) && config('laravel-settings.edit_mode') == 'text'),
                         ]),
                     ]),
-            ])
-            ;
+            ]);
     }
 
     public static function table(Table $table): Table
@@ -173,15 +167,70 @@ class LaravelSettingsResource extends Resource
                     ->searchable(),
                 TextColumn::make('type')
                     ->label(__('settings::laravel-settings.field.value.type')),
-                TextColumn::make('value')
-                    ->label(__('settings::laravel-settings.field.value.value')),
+                TextColumn::make('value_display')
+                    ->label(__('settings::laravel-settings.field.value.value'))
+                    ->getStateUsing(function (Model $record): string {
+                        $raw = $record->getRawOriginal('value') ?? '';
+                        $maxLines = 6;
+
+                        if ($record->type === LaravelSetting::TYPE_BOOLEAN) {
+                            return $raw ? 'true' : 'false';
+                        }
+
+                        if (in_array($record->type, [LaravelSetting::TYPE_ARRAY, LaravelSetting::TYPE_OBJECT])) {
+                            $decoded = json_decode($raw, true);
+
+                            if (is_array($decoded)) {
+                                $lines = [];
+
+                                foreach ($decoded as $key => $val) {
+                                    if (is_array($val)) {
+                                        $val = json_encode($val, JSON_UNESCAPED_SLASHES);
+                                    } elseif (is_bool($val)) {
+                                        $val = $val ? 'true' : 'false';
+                                    }
+
+                                    $lines[] = '<span class="text-gray-400 dark:text-gray-500">'.e($key).':</span> '.e(Str::limit((string) $val, 50));
+                                }
+
+                                $total = count($lines);
+                                $visible = array_slice($lines, 0, $maxLines);
+                                $html = implode('<br>', $visible);
+
+                                if ($total > $maxLines) {
+                                    $html .= '<br><span class="text-gray-400 dark:text-gray-500 italic">… +'.($total - $maxLines).' more</span>';
+                                }
+
+                                return $html;
+                            }
+                        }
+
+                        return e(Str::limit($raw, 80));
+                    })
+                    ->html()
+                    ->tooltip(function (Model $record): ?string {
+                        $raw = $record->getRawOriginal('value') ?? '';
+
+                        if (in_array($record->type, [LaravelSetting::TYPE_ARRAY, LaravelSetting::TYPE_OBJECT])) {
+                            $decoded = json_decode($raw, true);
+
+                            if (is_array($decoded)) {
+                                return Str::limit(
+                                    json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+                                    500
+                                );
+                            }
+                        }
+
+                        return strlen($raw) > 60 ? $raw : null;
+                    }),
             ])
             ->filters([
                 TrashedFilter::make(),
             ])->actions([
                 Tables\Actions\EditAction::make()
-                    ->mutateFormDataUsing(function(array $data, Model $record): array {
-                        switch(data_get($data, 'type')) {
+                    ->mutateFormDataUsing(function (array $data, Model $record): array {
+                        switch (data_get($data, 'type')) {
                             case LaravelSetting::TYPE_BOOLEAN:
                                 $data['value'] = (bool) $data['value'];
                                 break;
@@ -193,16 +242,16 @@ class LaravelSettingsResource extends Resource
                                 break;
                             case LaravelSetting::TYPE_ARRAY:
 
-                                if(config('laravel-settings.edit_mode') == 'text') {
+                                if (config('laravel-settings.edit_mode') == 'text') {
                                     // legacy when using textarea and php array string format
                                     // nothing to do aas it will be json anyway
-//                                    $data['value'] = $record->parsePhpArrayString($data['value']);
-//
-//                                    dd($data['value']);
+                                    //                                    $data['value'] = $record->parsePhpArrayString($data['value']);
+                                    //
+                                    //                                    dd($data['value']);
                                 } else {
                                     // starts as a comma delimited list, explode and trim
-//                                    $data['value'] = array_map('trim', explode(',', $data['value']));
-                                    $data['value'] =  json_encode($data['value']);
+                                    //                                    $data['value'] = array_map('trim', explode(',', $data['value']));
+                                    $data['value'] = json_encode($data['value']);
                                 }
 
                                 break;
@@ -211,6 +260,7 @@ class LaravelSettingsResource extends Resource
                                 $data['value'] = (string) $data['value'];
                                 break;
                         }
+
                         return $data;
                     }),
                 TableAction::make('test_setting')
@@ -237,36 +287,36 @@ class LaravelSettingsResource extends Resource
                         $isComplex = is_array($value) || is_object($value);
 
                         $valueHtml = $isComplex
-                            ? '<pre class="text-xs bg-gray-50 dark:bg-gray-800 rounded p-3 overflow-x-auto whitespace-pre-wrap font-mono">' . e($displayValue) . '</pre>'
-                            : '<span class="text-sm font-mono bg-gray-50 dark:bg-gray-800 rounded px-2 py-1">' . e($displayValue) . '</span>';
+                            ? '<pre class="text-xs bg-gray-50 dark:bg-gray-800 rounded p-3 overflow-x-auto whitespace-pre-wrap font-mono">'.e($displayValue).'</pre>'
+                            : '<span class="text-sm font-mono bg-gray-50 dark:bg-gray-800 rounded px-2 py-1">'.e($displayValue).'</span>';
 
                         $timeColor = $elapsed < 1 ? 'text-green-600 dark:text-green-400' : ($elapsed < 10 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400');
 
                         return new HtmlString(
                             '<div class="space-y-4">'
-                            . '<div class="grid grid-cols-2 gap-4">'
-                            . '<div>'
-                            . '<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">' . e(__('Key')) . '</p>'
-                            . '<p class="text-sm font-mono mt-1">' . e($key) . '</p>'
-                            . '</div>'
-                            . '<div>'
-                            . '<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">' . e(__('Type')) . '</p>'
-                            . '<p class="text-sm mt-1">' . e($record->type ?? gettype($value)) . '</p>'
-                            . '</div>'
-                            . '<div>'
-                            . '<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">' . e(__('Source')) . '</p>'
-                            . '<p class="text-sm mt-1">' . e($source) . '</p>'
-                            . '</div>'
-                            . '<div>'
-                            . '<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">' . e(__('Time')) . '</p>'
-                            . '<p class="text-sm mt-1 font-mono ' . $timeColor . '">' . number_format($elapsed, 3) . ' ms</p>'
-                            . '</div>'
-                            . '</div>'
-                            . '<div>'
-                            . '<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">' . e(__('Value')) . '</p>'
-                            . $valueHtml
-                            . '</div>'
-                            . '</div>'
+                            .'<div class="grid grid-cols-2 gap-4">'
+                            .'<div>'
+                            .'<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">'.e(__('Key')).'</p>'
+                            .'<p class="text-sm font-mono mt-1">'.e($key).'</p>'
+                            .'</div>'
+                            .'<div>'
+                            .'<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">'.e(__('Type')).'</p>'
+                            .'<p class="text-sm mt-1">'.e($record->type ?? gettype($value)).'</p>'
+                            .'</div>'
+                            .'<div>'
+                            .'<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">'.e(__('Source')).'</p>'
+                            .'<p class="text-sm mt-1">'.e($source).'</p>'
+                            .'</div>'
+                            .'<div>'
+                            .'<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">'.e(__('Time')).'</p>'
+                            .'<p class="text-sm mt-1 font-mono '.$timeColor.'">'.number_format($elapsed, 3).' ms</p>'
+                            .'</div>'
+                            .'</div>'
+                            .'<div>'
+                            .'<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">'.e(__('Value')).'</p>'
+                            .$valueHtml
+                            .'</div>'
+                            .'</div>'
                         );
                     }),
                 Tables\Actions\ViewAction::make(),
@@ -294,13 +344,10 @@ class LaravelSettingsResource extends Resource
         }
 
         return [
-            'index'  => ListLaravelSettings::route('/'),
+            'index' => ListLaravelSettings::route('/'),
             'create' => CreateLaravelSetting::route('/create'),
-            'edit'   => EditLaravelSetting::route('/{record}/edit'),
-            'view'   => ViewLaravelSetting::route('/{record}'),
+            'edit' => EditLaravelSetting::route('/{record}/edit'),
+            'view' => ViewLaravelSetting::route('/{record}'),
         ];
     }
-
-
-
 }
