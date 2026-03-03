@@ -4,6 +4,8 @@ namespace Shopapps\LaravelSettings\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Shopapps\LaravelSettings\Services\SettingService;
 
 class LaravelSetting extends Model {
 
@@ -32,6 +34,41 @@ class LaravelSetting extends Model {
         self::TYPE_ARRAY   => self::TYPE_ARRAY,
         self::TYPE_STRING  => self::TYPE_STRING,
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(function (self $setting): void {
+            $service = SettingService::make();
+
+            if ($setting->wasChanged('key') || $setting->wasChanged('user_id')) {
+                $service->forgetEntry(
+                    (string) $setting->getOriginal('key'),
+                    $setting->getOriginal('user_id')
+                );
+            }
+
+            $service->syncEntry(
+                (string) $setting->key,
+                $setting->value,
+                $setting->user_id
+            );
+        });
+
+        static::deleted(function (self $setting): void {
+            SettingService::make()->forgetEntry(
+                (string) $setting->key,
+                $setting->user_id
+            );
+        });
+
+        static::restored(function (self $setting): void {
+            SettingService::make()->syncEntry(
+                (string) $setting->key,
+                $setting->value,
+                $setting->user_id
+            );
+        });
+    }
 
 
     public function getTable()
@@ -117,6 +154,59 @@ class LaravelSetting extends Model {
             return $setting->value;
         }
 
+        // Reconstruct parent arrays from child rows:
+        // e.g. if "reports.tenants.0" and "reports.tenants.1" exist,
+        // setting("reports.tenants") should return the rebuilt array.
+        $children = $base_query->clone()
+            ->where('key', 'like', $key . '.%')
+            ->get(['key', 'type', 'value']);
+
+        if ($children->isNotEmpty()) {
+            $entries = [];
+
+            foreach ($children as $child) {
+                $relativeKey = (string) Str::after($child->key, $key . '.');
+                $entries[$relativeKey] = static::castRawValueByType(
+                    (string) $child->type,
+                    $child->getRawAttribute('value')
+                );
+            }
+
+            // Prefer direct child rows (e.g. "0") over deeper legacy rows
+            // (e.g. "0.tenant_id") when both exist.
+            uksort(
+                $entries,
+                fn (string $a, string $b): int => substr_count($a, '.') <=> substr_count($b, '.')
+            );
+
+            $flattened = [];
+
+            foreach ($entries as $relativeKey => $castValue) {
+                $segments = explode('.', $relativeKey);
+                $hasAncestor = false;
+
+                while (count($segments) > 1) {
+                    array_pop($segments);
+                    if (array_key_exists(implode('.', $segments), $flattened)) {
+                        $hasAncestor = true;
+                        break;
+                    }
+                }
+
+                if ($hasAncestor) {
+                    continue;
+                }
+
+                $flattened[$relativeKey] = $castValue;
+            }
+
+            try {
+                return Arr::undot($flattened);
+            } catch (\Exception $e) {
+                return $flattened;
+            }
+        }
+
 
 
         // If key not found, start peeling off the last dot-segment
@@ -178,6 +268,33 @@ class LaravelSetting extends Model {
 
         // If we exhaust all segments and never find anything, return the default
         return $default;
+    }
+
+    protected static function castRawValueByType(string $type, mixed $value): mixed
+    {
+        switch ($type) {
+            case self::TYPE_BOOLEAN:
+                return (bool) $value;
+            case self::TYPE_INTEGER:
+                return (int) $value;
+            case self::TYPE_FLOAT:
+                return (float) $value;
+            case self::TYPE_ARRAY:
+                if (is_array($value)) {
+                    return $value;
+                }
+
+                return json_decode((string) $value, true) ?? [];
+            case self::TYPE_OBJECT:
+                if (is_object($value)) {
+                    return $value;
+                }
+
+                return json_decode((string) $value) ?? (object) [];
+            case self::TYPE_STRING:
+            default:
+                return (string) $value;
+        }
     }
 
     public function getPrettyValueAttribute()

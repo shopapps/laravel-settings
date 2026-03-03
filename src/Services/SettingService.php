@@ -15,6 +15,7 @@ class SettingService
      * The cache key used to store the pre-cached settings blob.
      */
     public const PRE_CACHE_KEY = 'laravel_settings_pre_cache';
+    public const PRE_CACHE_VERSION_KEY = 'laravel_settings_pre_cache_version';
 
     /**
      * The in-memory pre-cache blob, loaded once per request.
@@ -24,6 +25,7 @@ class SettingService
      * - array = the loaded blob
      */
     protected static array|false|null $preCacheBlob = null;
+    protected static string|int|null $preCacheVersion = null;
 
     /**
      * Singleton instance, so the in-memory blob survives across calls.
@@ -109,10 +111,29 @@ class SettingService
     {
         $user_id = $this->handleUserId($user_id);
 
-        Cache::forget($this->getKey($key, $user_id));
         $this->getQuery($key, $user_id)->delete();
+        $this->forgetEntry($key, $user_id);
+    }
 
-        // Remove from the in-memory blob and persist.
+    /**
+     * Sync a single setting value into all caches.
+     */
+    public function syncEntry(string $key, mixed $value, mixed $user_id = null): void
+    {
+        $user_id = $this->handleUserId($user_id);
+
+        Cache::forget($this->getKey($key, $user_id));
+        $this->updatePreCacheEntry($key, $value, $user_id);
+    }
+
+    /**
+     * Remove a single setting value from all caches.
+     */
+    public function forgetEntry(string $key, mixed $user_id = null): void
+    {
+        $user_id = $this->handleUserId($user_id);
+
+        Cache::forget($this->getKey($key, $user_id));
         $this->removePreCacheEntry($key, $user_id);
     }
 
@@ -234,8 +255,30 @@ class SettingService
 
         // Build a nested structure using Arr::undot, then flatten all
         // intermediate levels back into the blob.
+        // If both "a.b" and "a.b.c" exist as DB rows, treat "a.b" as authoritative
+        // and ignore "a.b.c" for parent derivation to avoid stale deep-leaf bleed-through.
+        usort(
+            $dottedKeys,
+            fn (string $a, string $b): int => substr_count($a, '.') <=> substr_count($b, '.')
+        );
+
         $flat = [];
         foreach ($dottedKeys as $key) {
+            $segments = explode('.', $key);
+            $hasAncestor = false;
+
+            while (count($segments) > 1) {
+                array_pop($segments);
+                if (array_key_exists(implode('.', $segments), $blob)) {
+                    $hasAncestor = true;
+                    break;
+                }
+            }
+
+            if ($hasAncestor) {
+                continue;
+            }
+
             $flat[$key] = $blob[$key];
         }
 
@@ -273,7 +316,9 @@ class SettingService
     public function clearPreCache(): void
     {
         Cache::forget(self::PRE_CACHE_KEY);
+        Cache::forget(self::PRE_CACHE_VERSION_KEY);
         static::$preCacheBlob = null;
+        static::$preCacheVersion = null;
     }
 
     /**
@@ -283,6 +328,7 @@ class SettingService
     {
         static::$singleton = null;
         static::$preCacheBlob = null;
+        static::$preCacheVersion = null;
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -296,9 +342,12 @@ class SettingService
      */
     protected function loadPreCacheBlob(): array|false
     {
-        if (static::$preCacheBlob === null) {
+        $cachedVersion = Cache::get(self::PRE_CACHE_VERSION_KEY);
+
+        if (static::$preCacheBlob === null || static::$preCacheVersion !== $cachedVersion) {
             $cached = Cache::get(self::PRE_CACHE_KEY);
             static::$preCacheBlob = is_array($cached) ? $cached : false;
+            static::$preCacheVersion = $cachedVersion;
         }
 
         return static::$preCacheBlob;
@@ -404,9 +453,12 @@ class SettingService
     protected function persistBlob(array $blob): void
     {
         $ttl = config('laravel-settings.pre_cache_ttl', 86400);
+        $version = (string) microtime(true);
 
         Cache::put(self::PRE_CACHE_KEY, $blob, $ttl);
+        Cache::put(self::PRE_CACHE_VERSION_KEY, $version, $ttl);
         static::$preCacheBlob = $blob;
+        static::$preCacheVersion = $version;
     }
 
     /**
