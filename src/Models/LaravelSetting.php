@@ -101,11 +101,11 @@ class LaravelSetting extends Model {
         return data_get($this->attributes, $value, $default);
     }
 
-    public static function getSetting($key, $default = null, $global = true)
+    public static function getSetting($key, $default = null, $user_id = null)
     {
         $base_query = self::query();
-        $user_id = auth()->user()?->id() ?? null;
-        if(!$global && $user_id) {
+
+        if ($user_id !== null) {
             $base_query->where('user_id', $user_id);
         }
 

@@ -2,7 +2,8 @@
 
 namespace Shopapps\LaravelSettings;
 
-use shopapps\LaravelSettings\Commands\Permission;
+use Shopapps\LaravelSettings\Commands\SettingsCache;
+use Shopapps\LaravelSettings\Commands\SettingsClear;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -17,6 +18,10 @@ class LaravelSettingsServiceProvider extends PackageServiceProvider
             ->name('laravel-settings')
             ->hasConfigFile('laravel-settings')
             ->hasMigration('create_laravel_settings_table')
-            ->hasTranslations();
+            ->hasTranslations()
+            ->hasCommands([
+                SettingsCache::class,
+                SettingsClear::class,
+            ]);
     }
 }

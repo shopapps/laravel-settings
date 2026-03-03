@@ -48,6 +48,10 @@ return [
 
     'cache_ttl' => env('LARAVEL_SETTINGS_CACHE_TTL', 86400),
 
+    'pre_cache_settings' => env('LARAVEL_SETTINGS_PRE_CACHE', true),
+
+    'pre_cache_ttl' => env('LARAVEL_SETTINGS_PRE_CACHE_TTL', 86400),
+
     'navigation_section_group' => 'Settings', // Default uses language constant
 
     'scope_to_tenant' => true,

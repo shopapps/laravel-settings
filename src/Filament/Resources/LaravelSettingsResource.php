@@ -15,6 +15,7 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -30,6 +31,9 @@ use Shopapps\LaravelSettings\Filament\Resources\LaravelSettingsResource\Pages\Li
 use Shopapps\LaravelSettings\Filament\Resources\LaravelSettingsResource\Pages\ViewLaravelSetting;
 use Shopapps\LaravelSettings\Models\LaravelSetting;
 use Shopapps\LaravelSettings\Resources\LaravelSettingsResource\RelationManager\RoleRelationManager;
+use Shopapps\LaravelSettings\Services\SettingService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\HtmlString;
 
 
 class LaravelSettingsResource extends Resource
@@ -208,6 +212,62 @@ class LaravelSettingsResource extends Resource
                                 break;
                         }
                         return $data;
+                    }),
+                TableAction::make('test_setting')
+                    ->label(__('Test'))
+                    ->icon('heroicon-o-play')
+                    ->color('info')
+                    ->modalHeading(fn (Model $record): string => __('Test Setting: :key', ['key' => $record->key]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel(__('Close'))
+                    ->modalContent(function (Model $record): HtmlString {
+                        $key = $record->key;
+
+                        // Measure the time to retrieve the setting value.
+                        $start = hrtime(true);
+                        $value = setting($key);
+                        $elapsed = (hrtime(true) - $start) / 1_000_000; // ms
+
+                        $source = Cache::has(SettingService::PRE_CACHE_KEY) ? 'pre-cache' : 'per-key cache / DB';
+
+                        $displayValue = is_array($value) || is_object($value)
+                            ? json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+                            : (is_bool($value) ? ($value ? 'true' : 'false') : (string) ($value ?? 'null'));
+
+                        $isComplex = is_array($value) || is_object($value);
+
+                        $valueHtml = $isComplex
+                            ? '<pre class="text-xs bg-gray-50 dark:bg-gray-800 rounded p-3 overflow-x-auto whitespace-pre-wrap font-mono">' . e($displayValue) . '</pre>'
+                            : '<span class="text-sm font-mono bg-gray-50 dark:bg-gray-800 rounded px-2 py-1">' . e($displayValue) . '</span>';
+
+                        $timeColor = $elapsed < 1 ? 'text-green-600 dark:text-green-400' : ($elapsed < 10 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400');
+
+                        return new HtmlString(
+                            '<div class="space-y-4">'
+                            . '<div class="grid grid-cols-2 gap-4">'
+                            . '<div>'
+                            . '<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">' . e(__('Key')) . '</p>'
+                            . '<p class="text-sm font-mono mt-1">' . e($key) . '</p>'
+                            . '</div>'
+                            . '<div>'
+                            . '<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">' . e(__('Type')) . '</p>'
+                            . '<p class="text-sm mt-1">' . e($record->type ?? gettype($value)) . '</p>'
+                            . '</div>'
+                            . '<div>'
+                            . '<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">' . e(__('Source')) . '</p>'
+                            . '<p class="text-sm mt-1">' . e($source) . '</p>'
+                            . '</div>'
+                            . '<div>'
+                            . '<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">' . e(__('Time')) . '</p>'
+                            . '<p class="text-sm mt-1 font-mono ' . $timeColor . '">' . number_format($elapsed, 3) . ' ms</p>'
+                            . '</div>'
+                            . '</div>'
+                            . '<div>'
+                            . '<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">' . e(__('Value')) . '</p>'
+                            . $valueHtml
+                            . '</div>'
+                            . '</div>'
+                        );
                     }),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\DeleteAction::make(),

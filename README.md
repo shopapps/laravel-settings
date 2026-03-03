@@ -53,72 +53,92 @@ If you're using Filament, you can optionally load the plugin:
 
 ### Helper Functions
 
-#### Retrieve a setting:
+#### Retrieve a setting — `setting()`
+
 ```php
-$value = setting({key}, {value}, {user_id}, {save});
-$value = setting('my.key', 'default_value');
-# or...
+// Single argument: returns DB value → config() fallback → null
 $value = setting('my.key');
 
+// With explicit default (no config fallback when a default is supplied)
+$value = setting('my.key', 'default_value');
 ```
+
+The `setting()` helper acts as a drop-in replacement for `config()` when reading values.
+When called with **a single argument**, it will:
+
+1. Check the database/cache for the key
+2. Fall back to `config($key)` if the database value is `null`
+3. Return `null` if neither has a value
+
+When called with **two or more arguments**, the `$default` parameter is used directly — no config fallback occurs.
+
 ##### For the currently authenticated user:
 ```php
 $value = setting('my.key', null, true);
-# or ...
 $value = setting('my.key', 'default_value', true);
 ```
 
 ##### For a specific user ID:
 ```php
-$user_id = 1; // id of user you want the setting for
-
 $value = setting('my.key', 'default_value', $user_id);
 ```
 
-#### Add or update a setting:
+#### Add or update a setting — `setting_add()`
 ```php
-add_setting('my.key', 'some value');
+setting_add('my.key', 'some value');
 ```
 
 ##### User-specific:
 ```php
-add_setting({key}, {value}, {type}, {user_id});
-add_setting('my.key', 'some value', 'string', 123);
+setting_add('my.key', 'some value', 'string', 123);
 ```
+
 ##### Or via `setting` helper (pass `true` to save):
 ```php
-setting('my.key', 'some new value', true, true);
+setting('my.key', 'some new value', null, true);
 ```
-#### Delete a setting:
+
+#### Delete a setting — `setting_delete()`
 
 ```php
-delete_setting('my.key');
-delete_setting('my.key', 123);
+setting_delete('my.key');
+setting_delete('my.key', 123);
 ```
-#### Clear cached settings:
+
+#### Clear cached settings — `setting_clear_cache()`
 ```php
-clear_settings();
+setting_clear_cache();
 ```
 
 This flushes all cached settings from Redis or your default cache store.
+
+### Deprecated Aliases
+
+The following function names still work but are deprecated and will be removed in a future major version:
+
+| Deprecated | Replacement |
+|---|---|
+| `add_setting()` | `setting_add()` |
+| `delete_setting()` | `setting_delete()` |
+| `clear_settings()` | `setting_clear_cache()` |
 
 ### Service Class
 
 Under the hood, these helpers call methods on `Shopapps\LaravelSettings\Services\SettingService`. You can also use it directly:
 ```php
-    use Shopapps\LaravelSettings\Services\SettingService;
+use Shopapps\LaravelSettings\Services\SettingService;
 
-    // get
-    $value = SettingService::make()->get('my.key');
+// get
+$value = SettingService::make()->get('my.key');
 
-    // add/update
-    SettingService::make()->add('my.key', 'some value');
+// add/update
+SettingService::make()->add('my.key', 'some value');
 
-    // delete
-    SettingService::make()->delete('my.key');
+// delete
+SettingService::make()->delete('my.key');
 
-    // clear all caches
-    SettingService::make()->clearAll();
+// clear all caches
+SettingService::make()->clearAll();
 ```
 
 

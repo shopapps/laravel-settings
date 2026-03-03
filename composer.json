@@ -1,6 +1,7 @@
 {
     "name": "shopapps/laravel-settings",
     "description": "config style settings but stored in a DB",
+    "version": "1.0.23",
     "keywords": [
         "shopapps",
         "laravel-settings"
@@ -16,9 +17,10 @@
         }
     ],
     "require": {
-        "php": "^8.1|^8.2",
+        "php": "^8.1|^8.2|^8.3|^8.4",
         "filament/filament": "^3.0",
-        "illuminate/support": "^9|^10|^11"
+        "illuminate/support": "^9|^10|^11",
+        "spatie/laravel-package-tools": "^1.0"
     },
     "require-dev": {
         "laravel/pint": "^1.10",
