@@ -7,6 +7,12 @@ use Illuminate\Support\Facades\Auth;
 use Shopapps\LaravelSettings\Services\SettingService;
 use Illuminate\Support\Str;
 
+if (! function_exists('settings')) {
+    function settings(string $key, $default = null, $user_id = null, $save = false): mixed
+    {
+        return setting($key, $default, $user_id, $save);
+    }
+}
 
 if (! function_exists('setting')) {
     /**

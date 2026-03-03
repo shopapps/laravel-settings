@@ -3,6 +3,7 @@
 namespace Shopapps\LaravelSettings\Services;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
@@ -115,6 +116,43 @@ class SettingService
         $this->removePreCacheEntry($key, $user_id);
     }
 
+    /**
+     * Delete all settings whose key starts with the given prefix.
+     *
+     * @return int Number of rows deleted.
+     */
+    public function deleteByPrefix(string $prefix, $user_id = null): int
+    {
+        $user_id = $this->handleUserId($user_id);
+
+        $query = $this->getModel()::query()
+            ->where(function ($q) use ($prefix) {
+                $q->where('key', $prefix)
+                    ->orWhere('key', 'like', $prefix.'.%');
+            });
+
+        if ($user_id !== null) {
+            $query->where('user_id', $user_id);
+        } else {
+            $query->whereNull('user_id');
+        }
+
+        // Clear per-key caches for each matching row.
+        $keys = $query->pluck('key');
+        foreach ($keys as $key) {
+            Cache::forget($this->getKey($key, $user_id));
+        }
+
+        $count = $query->delete();
+
+        // Rebuild the pre-cache blob to reflect the deletions.
+        if ($this->loadPreCacheBlob() !== false) {
+            $this->buildPreCache();
+        }
+
+        return $count;
+    }
+
     public function getQuery($key, $user_id = null)
     {
         return $this->getModel()::query()
@@ -155,6 +193,10 @@ class SettingService
      *
      * Stores all settings as a keyed array in a single cache entry,
      * similar to how Laravel's config:cache works.
+     *
+     * After loading all DB rows, derives parent keys from dot-notated
+     * children so that e.g. setting('reports.tenants') reconstructs
+     * the array from 'reports.tenants.0', 'reports.tenants.1', etc.
      */
     public function buildPreCache(): int
     {
@@ -167,9 +209,62 @@ class SettingService
             $blob[$cacheKey] = $setting->value;
         }
 
+        // Derive parent keys from dot-notated children.
+        $blob = $this->deriveParentKeys($blob);
+
         $this->persistBlob($blob);
 
         return count($blob);
+    }
+
+    /**
+     * Derive parent keys from dot-notated entries in the blob.
+     *
+     * Given entries like 'a.b.c.0' => 'x', 'a.b.c.1' => 'y', 'a.b.enabled' => true,
+     * this adds: 'a.b.c' => ['x', 'y'], 'a.b' => ['c' => [...], 'enabled' => true], 'a' => [...]
+     */
+    protected function deriveParentKeys(array $blob): array
+    {
+        // Collect all dotted keys (keys with at least one dot segment).
+        $dottedKeys = array_filter(array_keys($blob), fn ($k) => str_contains($k, '.'));
+
+        if (empty($dottedKeys)) {
+            return $blob;
+        }
+
+        // Build a nested structure using Arr::undot, then flatten all
+        // intermediate levels back into the blob.
+        $flat = [];
+        foreach ($dottedKeys as $key) {
+            $flat[$key] = $blob[$key];
+        }
+
+        $nested = Arr::undot($flat);
+
+        // Walk the nested structure and add every intermediate node.
+        $this->walkAndAddParents($nested, '', $blob);
+
+        return $blob;
+    }
+
+    /**
+     * Recursively walk a nested array and add each intermediate node to the blob.
+     */
+    protected function walkAndAddParents(array $data, string $prefix, array &$blob): void
+    {
+        foreach ($data as $key => $value) {
+            $fullKey = $prefix === '' ? (string) $key : "{$prefix}.{$key}";
+
+            if (is_array($value)) {
+                // Add this intermediate key to the blob (won't overwrite a DB entry
+                // that already exists at this exact key).
+                if (! array_key_exists($fullKey, $blob)) {
+                    $blob[$fullKey] = $value;
+                }
+
+                $this->walkAndAddParents($value, $fullKey, $blob);
+            }
+        }
     }
 
     /**
@@ -274,6 +369,9 @@ class SettingService
         $cacheKey = $this->buildPreCacheEntryKey($key, $user_id);
         $blob[$cacheKey] = $value;
 
+        // Re-derive parent keys so intermediate lookups stay correct.
+        $blob = $this->deriveParentKeys($blob);
+
         $this->persistBlob($blob);
     }
 
@@ -290,6 +388,12 @@ class SettingService
 
         $cacheKey = $this->buildPreCacheEntryKey($key, $user_id);
         unset($blob[$cacheKey]);
+
+        // Re-derive parent keys to remove stale intermediate entries.
+        // First strip all derived (non-DB) keys, then re-derive.
+        $dbKeys = $this->getModel()::query()->pluck('key')->all();
+        $blob = array_intersect_key($blob, array_flip($dbKeys));
+        $blob = $this->deriveParentKeys($blob);
 
         $this->persistBlob($blob);
     }

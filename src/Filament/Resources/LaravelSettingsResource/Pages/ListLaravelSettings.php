@@ -158,6 +158,87 @@ class ListLaravelSettings extends ListRecords
                         ->send();
                 }),
 
+            Action::make('delete_key')
+                ->label(__('Delete Key'))
+                ->icon('heroicon-o-trash')
+                ->color('danger')
+                ->modalHeading(__('Delete Settings by Key Prefix'))
+                ->modalDescription(__('This will delete all settings whose key matches or starts with the given prefix. For example, entering "reports.msisdn_activity" will delete "reports.msisdn_activity.tenants", "reports.msisdn_activity.tenants.0", etc.'))
+                ->modalSubmitActionLabel(__('Delete'))
+                ->modalWidth('lg')
+                ->form([
+                    TextInput::make('key_prefix')
+                        ->label(__('Key Prefix'))
+                        ->placeholder('e.g. reports.msisdn_activity')
+                        ->helperText(__('All settings with this exact key or beginning with this prefix will be permanently deleted.'))
+                        ->required()
+                        ->live(debounce: 500),
+
+                    Placeholder::make('delete_preview')
+                        ->label(__('Matching Keys'))
+                        ->content(function (callable $get): HtmlString {
+                            $prefix = $get('key_prefix');
+
+                            if (blank($prefix)) {
+                                return new HtmlString('');
+                            }
+
+                            $model = config('laravel-settings.models.laravel-setting', LaravelSettingModel::class);
+
+                            $matches = $model::query()
+                                ->where(function ($q) use ($prefix) {
+                                    $q->where('key', $prefix)
+                                        ->orWhere('key', 'like', $prefix.'.%');
+                                })
+                                ->whereNull('user_id')
+                                ->orderBy('key')
+                                ->pluck('key');
+
+                            if ($matches->isEmpty()) {
+                                return new HtmlString(
+                                    '<span class="text-sm text-gray-500 dark:text-gray-400">'
+                                    .e(__('No matching settings found.'))
+                                    .'</span>'
+                                );
+                            }
+
+                            $items = $matches->map(fn ($k) => '<li class="text-xs font-mono text-red-600 dark:text-red-400">'.e($k).'</li>')->join('');
+
+                            return new HtmlString(
+                                '<div class="space-y-2">'
+                                .'<p class="text-sm text-red-600 dark:text-red-400 font-medium">'
+                                .e(__(':count settings will be deleted:', ['count' => $matches->count()]))
+                                .'</p>'
+                                .'<ul class="list-disc list-inside max-h-48 overflow-y-auto bg-gray-50 dark:bg-gray-800 rounded p-3 border border-gray-200 dark:border-gray-700">'
+                                .$items
+                                .'</ul>'
+                                .'</div>'
+                            );
+                        })
+                        ->visible(fn (callable $get): bool => filled($get('key_prefix'))),
+                ])
+                ->action(function (array $data): void {
+                    $prefix = $data['key_prefix'];
+
+                    $count = SettingService::make()->deleteByPrefix($prefix);
+
+                    if ($count === 0) {
+                        Notification::make()
+                            ->title(__('No Settings Found'))
+                            ->body(__('No settings matched the prefix ":prefix".', ['prefix' => $prefix]))
+                            ->warning()
+                            ->send();
+
+                        return;
+                    }
+
+                    Notification::make()
+                        ->title(__('Settings Deleted'))
+                        ->body(__(':count settings deleted for prefix ":prefix".', ['count' => $count, 'prefix' => $prefix]))
+                        ->success()
+                        ->send();
+                }),
+
             ActionGroup::make([
                 Action::make('view_cache')
                     ->label(__('View Cache'))
@@ -231,30 +312,29 @@ class ListLaravelSettings extends ListRecords
     /**
      * Resolve config value into importable entries.
      *
-     * When flatten is true and the value is a multi-dimensional array,
-     * each top-level key becomes its own setting row.
+     * When flatten is true, only the first level is split into separate rows.
+     * Nested arrays remain intact in each row's value.
      *
      * @return array<int, array{key: string, type: string, value: string}>
      */
     protected function resolveImportEntries(string $configKey, mixed $value, bool $flatten): array
     {
-        // Scalar or non-array — always a single entry.
         if (! is_array($value)) {
             return [$this->buildEntry($configKey, $value)];
         }
 
-        // Flat array (no nested arrays) or flatten disabled — single entry.
-        $hasNestedArrays = collect($value)->contains(fn ($v) => is_array($v));
-
-        if (! $flatten || ! $hasNestedArrays) {
+        if (! $flatten) {
             return [$this->buildEntry($configKey, $value)];
         }
 
-        // Multi-dimensional array with flatten enabled — one row per top-level key.
         $entries = [];
 
-        foreach ($value as $subKey => $subValue) {
-            $entries[] = $this->buildEntry("{$configKey}.{$subKey}", $subValue);
+        foreach ($value as $childKey => $childValue) {
+            $entries[] = $this->buildEntry("{$configKey}.{$childKey}", $childValue);
+        }
+
+        if (count($entries) === 0) {
+            return [$this->buildEntry($configKey, $value)];
         }
 
         return $entries;
